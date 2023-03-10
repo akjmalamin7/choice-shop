@@ -1,46 +1,61 @@
 const _ = require('lodash')
+const formidable = require('formidable')
 const fs = require('fs')
 const { Product, validate } = require('../models/product')
-const formidable = require('formidable')
-const { result } = require('lodash')
 
-module.exports.createProduct = async(req, res) =>{
-    const form = new formidable.IncomingForm()
+module.exports.createProduct = async (req, res) => {
+    let form = new formidable.IncomingForm()
     form.keepExtensions = true
-    form.parse(req, (err, fields, files)=>{
-        if(err) return res.status(400).send("Something went wrong!")
+    form.parse(req, (err, fields, files) => {
+        if (err) return res.status(400).send("Something went wrong!")
 
-        const {error} = validate(_.pick(fields, ["name", "description", "price", "category", "quantity"]))
-        if(error) return res.status(400).send(error.details[0].message)
+        const { error } = validate(_.pick(fields, ["name", "description", "price", "category", "quantity"]))
+        if (error) return res.status(400).send(error.details[0].message)
 
         const product = new Product(fields)
 
-        if(files.photo){
-            fs.readFile(files.photo.path, (err, data)=>{
-                if(err) return res.status(400).send("Problem in file data!")
+        // console.log(fields)
+        // console.log(files)
+        // return res.send({})
+
+        if (files.photo) {
+            fs.readFile(files.photo.filepath, async (err, data) => {
+                if (err) return res.status(400).send("Problem in file data!")
 
                 product.photo.data = data
-                product.contentType = files.photo.type 
+                product.photo.contentType = files.photo.type
 
-                product.save((err, result)=>{
-                    if(err) return res.status(500).send("Internal server error!")
-                    else return res.status(201).send({
-                        message:"Product created successfully!",
-                        data: _pick(result, ["name", "description", "price", "category", "quantity"])
+                let response = await product.save();
+
+                if (response._id) {
+                    return res.status(201).send({
+                        message: "Product created successfully!",
+                        data: _.pick(fields, ["name", "description", "price", "category", "quantity"])
                     })
-                })
+                } else {
+                    return res.status(500).send("Internal server error!")
+                }
             })
-        }else{
+        } else {
             return res.status(400).send("No image provided!")
         }
     })
 }
-module.exports.getProducts = async(req, res) =>{
+module.exports.getProducts = async (req, res) => {
+    console.log(req.query)
+    let order = req.query.order === 'desc' ? -1 : 1
+    let sortBy = req.query.sortBy ? req.query.sortBy : "_id"
+    let limit = req.query.limit ? parseInt(req.query.limit) : 10
+    const product = await Product.find()
+        .select({ photo: 0 })
+        .sort({ [sortBy]: order })
+        .populate("category", "name")
+        .limit(limit)
+    return res.status(200).send(product)
+}
+module.exports.getProductById = async (req, res) => {
 
 }
-module.exports.getProductById = async(req, res) =>{
-
-}
-module.exports.updateProductById = async(req, res) =>{
+module.exports.updateProductById = async (req, res) => {
 
 }

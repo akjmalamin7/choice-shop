@@ -23,7 +23,7 @@ module.exports.validate = product =>{
         description:Joi.string().max(2000).required(),
         price:Joi.number().required(),
         quantity:Joi.number().required(),
-        category:Joi.string()
+        category:Joi.string().required()
     })
     return schema.validate(product)
 }
