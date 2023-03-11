@@ -1,12 +1,11 @@
 const router = require('express').Router()
 const {
-    createProduct,
-    getProducts,
-    getProductById,
-    updateProductById,
-    getPhoto,
-    filterProduct
-} = require('../controllers/productController')
+    createCartItem,
+    getCartItem,
+    updateCartItem,
+    deleteCartItem
+
+} = require('../controllers/cartRouter')
 const admin = require('../middleware/admin')
 const authorize = require('../middleware/authorize')
 
